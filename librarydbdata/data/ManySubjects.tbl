@@ -1,0 +1,13 @@
+1|1  # File 1 is associated with Physics subject
+1|11  # File 1 is associated with Geology subject
+2|2  # File 2 is associated with Chemistry subject
+3|10  # File 3 is associated with Mathematics subject
+4|3  # File 4 is associated with Computer Science subject
+5|4  # File 5 is associated with Biology subject
+6|1  # File 6 is associated with Physics subject
+7|2  # File 7 is associated with Chemistry subject
+8|5  # File 8 is associated with Psychology subject
+9|6  # File 9 is associated with Economics subject
+10|7  # File 10 is associated with History subject
+11|8  # File 11 is associated with Art subject
+12|10  # File 12 is associated with Mathematics subject

@@ -2,11 +2,13 @@ CREATE TABLE Files (
     f_filekey INT PRIMARY KEY,
     f_title VARCHAR(255),
     f_author VARCHAR(100),
-    f_publicationYear INT
+    f_publicationYear INT,
+    f_publisherkey INT,
+    f_subjectkey INT, 
     FOREIGN KEY (f_publisherkey) REFERENCES Publisher(p_publisherkey),
     FOREIGN KEY (f_subjectkey) REFERENCES Subjects(s_subjectkey)
-    
 );
+
 
 CREATE TABLE User (
     u_userkey INT PRIMARY KEY,
