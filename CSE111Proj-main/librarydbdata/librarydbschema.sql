@@ -32,6 +32,8 @@ CREATE TABLE Librarian(
 );
 
 CREATE TABLE ManySubjects (
+    f_filekey INT,
+    s_subjectkey INT,
     PRIMARY KEY (f_filekey, s_subjectkey),
     FOREIGN KEY (f_filekey) REFERENCES Files(f_filekey),
     FOREIGN KEY (s_subjectkey) REFERENCES Subjects(s_subjectkey)
