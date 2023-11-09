@@ -5,3 +5,5 @@ delete from Publisher;
 delete from Student;
 delete from Subjects;
 delete from User;
+delete from BorrowedBooks;
+delete from AddedBooks;
