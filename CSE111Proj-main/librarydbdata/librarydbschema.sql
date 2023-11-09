@@ -9,7 +9,6 @@ CREATE TABLE Files (
     FOREIGN KEY (f_subjectkey) REFERENCES Subjects(s_subjectkey)
 );
 
-
 CREATE TABLE User (
     u_userkey INT PRIMARY KEY,
     u_username VARCHAR(50),
@@ -43,6 +42,24 @@ CREATE TABLE Publisher(
     p_publisherkey INT PRIMARY KEY,
     p_publishername VARCHAR(100),
     p_licensingagreement INT  
+);
+
+CREATE TABLE BorrowedBooks (
+    transaction_id INT PRIMARY KEY,
+    borrow_date DATE,
+    student_id INT,
+    book_id INT,
+    FOREIGN KEY (student_id) REFERENCES Student(s_studentkey),
+    FOREIGN KEY (book_id) REFERENCES Files(f_filekey)
+);
+
+CREATE TABLE AddedBooks (
+    addition_id INT PRIMARY KEY,
+    addition_date DATE,
+    librarian_id INT,
+    book_id INT,
+    FOREIGN KEY (librarian_id) REFERENCES Librarian(l_librariankey),
+    FOREIGN KEY (book_id) REFERENCES Files(f_filekey)
 );
 
 CREATE TABLE Subjects(
