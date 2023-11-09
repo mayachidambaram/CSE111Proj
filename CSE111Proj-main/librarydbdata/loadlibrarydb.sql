@@ -7,3 +7,5 @@
 .import data/Librarian.tbl Librarian
 .import data/User.tbl User
 .import data/Files.tbl Files
+.import data/BorrowedBooks.tbl BorrowedBooks
+.import data/AddedBooks.tbl AddedBooks
