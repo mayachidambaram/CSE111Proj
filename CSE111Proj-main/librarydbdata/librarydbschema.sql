@@ -45,21 +45,21 @@ CREATE TABLE Publisher(
 );
 
 CREATE TABLE BorrowedBooks (
-    transaction_id INT PRIMARY KEY,
-    borrow_date DATE,
-    student_id INT,
-    book_id INT,
-    FOREIGN KEY (student_id) REFERENCES Student(s_studentkey),
-    FOREIGN KEY (book_id) REFERENCES Files(f_filekey)
+    b_transaction_id INT PRIMARY KEY,
+    b_borrow_date DATE,
+    b_student_id INT,
+    b_book_id INT,
+    FOREIGN KEY (b_student_id) REFERENCES Student(s_studentkey),
+    FOREIGN KEY (b_book_id) REFERENCES Files(f_filekey)
 );
 
 CREATE TABLE AddedBooks (
-    addition_id INT PRIMARY KEY,
-    addition_date DATE,
-    librarian_id INT,
-    book_id INT,
-    FOREIGN KEY (librarian_id) REFERENCES Librarian(l_librariankey),
-    FOREIGN KEY (book_id) REFERENCES Files(f_filekey)
+    a_addition_id INT PRIMARY KEY,
+    a_addition_date DATE,
+    a_librarian_id INT,
+    a_book_id INT,
+    FOREIGN KEY (a_librarian_id) REFERENCES Librarian(l_librariankey),
+    FOREIGN KEY (a_book_id) REFERENCES Files(f_filekey)
 );
 
 CREATE TABLE Subjects(
