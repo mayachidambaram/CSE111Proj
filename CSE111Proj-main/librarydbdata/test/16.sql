@@ -12,3 +12,4 @@ join
 join 
     Files ON
     AddedBooks.a_book_id = Files.f_filekey
+--finds names of librarians who added books
