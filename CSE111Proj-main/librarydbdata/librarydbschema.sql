@@ -49,6 +49,7 @@ CREATE TABLE BorrowedBooks (
     b_borrow_date DATE,
     b_student_id INT,
     b_book_id INT,
+    b_status CHAR,
     FOREIGN KEY (b_student_id) REFERENCES Student(s_studentkey),
     FOREIGN KEY (b_book_id) REFERENCES Files(f_filekey)
 );
