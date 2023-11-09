@@ -59,8 +59,12 @@ CREATE TABLE AddedBooks (
     a_addition_date DATE,
     a_librarian_id INT,
     a_book_id INT,
+    a_publisherkey INT,
+    a_subjectkey INT,
     FOREIGN KEY (a_librarian_id) REFERENCES Librarian(l_librariankey),
-    FOREIGN KEY (a_book_id) REFERENCES Files(f_filekey)
+    FOREIGN KEY (a_book_id) REFERENCES Files(f_filekey),
+    FOREIGN KEY (a_publisherkey) REFERENCES Publisher(p_publisherkey),
+    FOREIGN KEY (a_subjectkey) REFERENCES Subjects(s_subjectkey),
 );
 
 CREATE TABLE Subjects(
