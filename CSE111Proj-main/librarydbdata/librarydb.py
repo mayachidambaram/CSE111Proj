@@ -1,8 +1,55 @@
 import sqlite3
 
-def connect_to_database():
-    connection = sqlite3.connect('librarydb.sqlite')  
-    return connection
+def openConnection(_dbFile):
+    print("Open database: ", _dbFile)
+    conn = None
+    try :
+        conn = sqlite3.connect(_dbFile)
+        print("Welcome to the library database management system.")
+    except Error as e:
+        print(e)
+    return conn
+
+def closeConnection(_conn, _dbFile):
+    print("Close database: ", _dbFile)
+    try :
+        _conn.close()
+        print("success")
+    except Error as e:
+        print(e)
+
+def Q1(_conn, letter):
+    print("1. Subject Letter\n")
+
+    try:
+        output = open('output/1.out', 'w')
+        header = "{}"
+        output.write((header.format("Subject/s :")) + '\n')
+        query1 = """ SELECT s_subjectname as subject 
+                 FROM Subjects  
+                 WHERE s_subjectname 
+                 LIKE ?; """
+
+        cursor = _conn.cursor()
+        cursor.execute(query1, (f'{letter.upper()}%',))
+
+        results = cursor.fetchall()
+
+        if not results:
+            output.write("No subjects found starting with specified letter.\n")
+        else:
+            for row in results:
+                output.write("|".join(map(str, row)) + '\n')
+        output.close()
+
+        with open('output/1.out', 'r') as output:
+            file_content = output.read()
+            print(file_content)
+        output.close()
+    except Error as e:
+        print(e)
+
+
 
 def display_files(cursor):
     query = """
@@ -37,34 +84,43 @@ def apply_filter(cursor, category, value):
         print(f"Title: {file[0]}, Author: {file[1]}")
 
 def main():
-    connection = connect_to_database()
-    cursor = connection.cursor()
+    database = r"librarydb.sqlite"
 
-    print("Welcome to the library database management system.")
+    conn = openConnection(database)
+    #cursor = connection.cursor()
+
     user_type = input("If you are a student, press 0. If you are a teacher, press 1: ")
+    print("\n")
 
     if user_type == '0':
-        display_files(cursor)
+        #display_files(cursor)
 
         filters = []
 
         while True:
             # Allow the user to filter by category
-            category = int(input("Choose the corresponding number to filter by a specific category:\n"
-                                 "1. Subject Letter\n"
+            print("-------------------------------------------------------------\n")
+            category = int(input("1. Subject Letter\n"
                                  "2. Publisher\n"
                                  "3. Publisher date\n"
                                  "4. Author First Name\n"
                                  "5. Author Last Name\n"
                                  "6. Never before borrowed book\n"
-                                 "0. Apply Filters and Display Results\n"
-                                 "Enter 0 to apply filters and display results: "))
+                                 "0. Exit or Restart\n"
+                                 "Choose the corresponding number to filter by a specific category: "))
+                                 #"0. Apply Filters and Display Results\n"))
+                                 #"Enter 0 to apply filters and display results: "))
 
             if category == 0:
                 # Apply all selected filters
-                for filter_item in filters:
-                    apply_filter(cursor, filter_item['category'], filter_item['value'])
+                #for filter_item in filters:
+                #    apply_filter(cursor, filter_item['category'], filter_item['value'])
                 break
+            if category == 1:
+                letter = ""
+                letter = input("Enter the letter you want the subject to start with: ")
+                with conn:
+                    Q1(conn, letter)
             elif category in range(1, 7):
                 category_mapping = {
                     1: 'subject_letter',
@@ -91,7 +147,7 @@ def main():
     else:
         print("Invalid input. Please enter 0 or 1.")
 
-    connection.close()
+    closeConnection(conn, database)
 
 if __name__ == "__main__":
     main()
