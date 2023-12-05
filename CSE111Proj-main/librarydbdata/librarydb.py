@@ -141,9 +141,9 @@ def Q2_2(_conn, p_name):
     except Error as e:
         print(e)
 
-def Q3_1(_conn, num){
+def Q3_1(_conn, num):
     try: 
-        if num = 1:
+        if num == 1:
             output = open('output/3_1.out', 'w')
             header = "{}|{}"
             output.write((header.format("Random Subject","Random Publisher")) + '\n')
@@ -152,9 +152,9 @@ def Q3_1(_conn, num){
                             from Subjects 
                             order by RANDOM() limit 1) as random_subject,
                             (select p_publishername 
-                            from Publishers
-                            order by RANDOM() limit 1) as random_subject) as random_publisher"""
-        elif num = 2:
+                            from Publisher
+                            order by RANDOM() limit 1) as random_publisher"""
+        elif num == 2:
             output = open('output/3_1.out', 'w')
             header = "{}"
             output.write((header.format("Random Subject")) + '\n')
@@ -163,17 +163,17 @@ def Q3_1(_conn, num){
                            order by RANDOM() 
                            limit 1"""
 
-        elif num = 3:
+        elif num == 3:
             output = open('output/3_1.out', 'w')
             header = "{}"
             output.write((header.format("Random Publisher")) + '\n')
             query3_1 = """ select p_publishername 
-                           from Publishers
+                           from Publisher
                            order by RANDOM() 
                            limit 1"""
 
         cursor = _conn.cursor()
-        cursor.execute(query3_1, (p_name,))
+        cursor.execute(query3_1)
 
         results = cursor.fetchall()
 
@@ -185,17 +185,46 @@ def Q3_1(_conn, num){
             file_content = output.read()
             print(file_content)
         output.close()
+        return results
+
     except Error as e:
         print(e)
-}
+        return None
 
-def Q3_2(_conn){
+def Q3_2(_conn, year, s_name, p_name):
     try:
         output = open('output/3_2.out','w')
-        header - "{}|{}"
-        #working on this
+        header = "{}|{}|{}|{}"
+        output.write((header.format("Title","Year","Subject","Publisher")) + '\n')
+        query3_2 = """ select F.f_title, F.f_publicationYear, S.s_subjectname, P.p_publishername
+                       from Files F
+                       JOIN ManySubjects M on F.f_filekey = M.f_filekey  
+                       JOIN Subjects S on S.s_subjectkey = M.s_subjectkey
+                       JOIN Publisher P on F.f_publisherkey = P.p_publisherkey
+                       where strftime('%Y',F.f_publicationYear) <= ? 
+                       and S.s_subjectname = ? and P.p_publishername = ?"""
 
-}
+        cursor = _conn.cursor()
+        cursor.execute(query3_2,(year, s_name, p_name))
+
+        results = cursor.fetchall()
+
+        temp = 0
+        if not results:
+            output.write("Unfortunately, the library has inadequate files.")
+            temp = temp + 1
+        for row in results:
+            output.write("|".join(map(str, row)) + '\n')
+        output.close()
+
+        with open('output/3_2.out', 'r') as output:
+            file_content = output.read()
+            print(file_content)
+        output.close()
+        return temp
+    except Error as e:
+        print(e)
+
 
 def display_files(cursor):
     query = """
@@ -241,7 +270,9 @@ def main():
     if user_type == '0':
         #display_files(cursor)
 
-        filters = []
+        #filters = []
+        p_name = ""
+        s_name = ""
 
         while True:
             # Allow the user to filter by category
@@ -251,7 +282,7 @@ def main():
                                  "3. Publication date\n"
                                  "4. Author\n"
                                  "5. File Keywords\n"
-                                 "0. Exit or Restart\n"
+                                 "0. Leave/Exit\n"
                                  "Choose the corresponding number to filter by a specific category: "))
                                  #"0. Apply Filters and Display Results\n"))
                                  #"Enter 0 to apply filters and display results: "))
@@ -271,7 +302,6 @@ def main():
                         else :
                             break 
                 while True:
-                    s_name = ""
                     s_name = input("Choose the subject you want and its book count will be returned: ")
                     with conn:
                         result = Q1_2(conn, s_name)
@@ -283,39 +313,48 @@ def main():
                 print("Here is list of all publishers you can choose from: \n")
                 with conn:
                     Q2_1(conn)
-                While True:
-                    p_name = ""
+                while True:
                     p_name = input("Choose a publisher. Ensure no typos or capitalization errors: ")
                     with conn:
                         result = Q2_2(conn,p_name)
                         if result:
-                            print()
+                            print("There is an issue. Unfortunately, we by accident did not add files under this publiser. Please choose another.\n")
                         else :
                             break
             if category == 3 :
                 print("You can find books after a cutoff date based on subject and/or publisher. \n")
-                if (s_name = "" and p_name = ""){
-                    print("You have neither chosen a subject name nor a publisher name.\n")
-                    print("You will be assigned a random subject and random publisher.\n")
+                if (s_name == "" and p_name == ""):
+                    print("You have neither chosen a subject name nor a publisher name \n")
+                    print("You will be assigned a random subject and random publisher \n")
                     with conn:
-                        Q3_1(conn,1)
-                }
-                elif (s_name = ""){
-                    print("You have not chosen a subject name.\n")
-                    print("You will be assigned a random subject.\n")
+                        random_values = Q3_1(conn,1)
+                        if random_values:
+                            s_name, p_name = random_values[0]
+                elif (s_name == ""):
+                    print("You have not chosen a subject name \n")
+                    print("You will be assigned a random subject \n")
                     with conn:
-                        Q3_1(conn,2)
-                }
-                elif (p_name = ""){
-                    print("You have not chosen a publisher name.\n")
-                    print("You will be assigned a random publisher.\n")
+                        random_values = Q3_1(conn,2)
+                        if random_values:
+                            s_name, p_name = random_values[0][0]
+                elif (p_name == ""):
+                    print("You have not chosen a publisher name \n")
+                    print("You will be assigned a random publisher \n")
                     with conn:
-                        Q3_1(conn,3)
-                }
+                        random_values = Q3_1(conn,3)
+                        if random_values:
+                            s_name, p_name = random_values[0][0]
                 print("\n")
-                
-                with conn:
-                    Q3_2(conn)
+                while True:
+                    year = input("Regarding publication date, what is the earliest year a book you want can be from: ")
+                    with conn:
+                        result = Q3_2(conn,year,s_name,p_name)
+                        if result:
+                            print("Please try again with a different year or by accident we did not add this subject under this publisher. \n")
+                            print("To prevent continuouly finding a good cutoff date, we advise you to choose again from categories. \n")
+                            break
+                        else:
+                            break
 
             #elif category in range(1, 7):
             #    category_mapping = {
