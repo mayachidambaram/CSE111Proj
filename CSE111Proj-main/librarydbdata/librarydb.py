@@ -50,20 +50,17 @@ def Q1(_conn, letter):
     except Error as e:
         print(e)
 
-def Q2(_conn):
-    print("2. Number of Books In Each Subject\n")
-
-    try:
-        output = open('output/2.out', 'w')
-        header = "{}|{}"
-        output.write((header.format("Subject","Book Count")) + '\n')
-        query2 = """ SELECT S.s_subjectname as Subject, count(F.f_filekey) as booknuminsubj 
-        FROM Files F, Subjects S, ManySubjects M
-        Where F.f_filekey = M.f_filekey and S.s_subjectkey = M.s_subjectkey
-        Group By S.s_subjectname """
+def Q2_1(_conn):
+    try: 
+        output = open('output/2_1.out', 'w')
+        header = "{}"
+        output.write((header.format("Publisher/s :")) + '\n')
+        query2_1 = """SELECT p_publishername as publisher
+                      FROM Publisher
+                      Group By p_publishername"""
 
         cursor = _conn.cursor()
-        cursor.execute(query2)
+        cursor.execute(query2_1)
 
         results = cursor.fetchall()
 
@@ -71,7 +68,38 @@ def Q2(_conn):
             output.write("|".join(map(str, row)) + '\n')
         output.close()
 
-        with open('output/2.out', 'r') as output:
+        with open('output/2_1.out', 'r') as output:
+            file_content = output.read()
+            print(file_content)
+        output.close()
+    except Error as e:
+        print(e)  
+
+def Q2_2(_conn, p_name):
+    print("2. Number of Books In Each Subject\n")
+
+    try:
+        output = open('output/2_2.out', 'w')
+        header = "{}|{}|{}"
+        output.write((header.format("Filekey","Title", "Author")) + '\n')
+        query2_2 = """ select F.f_filekey, F.f_title, F.f_author
+                from Files F
+                where F.f_publisherkey = (
+                            select P.p_publisherkey 
+                            From Publisher P
+                            Where P.p_publishername = ?
+                ) """
+
+        cursor = _conn.cursor()
+        cursor.execute(query2_2, (p_name,))
+
+        results = cursor.fetchall()
+
+        for row in results:
+            output.write("|".join(map(str, row)) + '\n')
+        output.close()
+
+        with open('output/2_2.out', 'r') as output:
             file_content = output.read()
             print(file_content)
         output.close()
@@ -128,8 +156,8 @@ def main():
             # Allow the user to filter by category
             print("-------------------------------------------------------------\n")
             category = int(input("1. Subject Letter\n"
-                                 "2. Number of Books In Each Subject\n"
-                                 "3. Publisher date\n"
+                                 "2. Publisher\n"
+                                 "3. Publication date\n"
                                  "4. Author First Name\n"
                                  "5. Author Last Name\n"
                                  "6. Never before borrowed book\n"
@@ -149,8 +177,14 @@ def main():
                 with conn:
                     Q1(conn, letter)
             if category == 2:
+                print("Here is list of all publishers you can choose from: \n")
                 with conn:
-                    Q2(conn)
+                    Q2_1(conn)
+                p_name = input("Please choose a publisher. Ensure no typos or capitalization errors: \n")
+                with conn:
+                    Q2_2(conn,p_name)
+            if category == 3 :
+                print("You can find books of a cutoff date based on subject and/or publisher. \n")
             elif category in range(1, 7):
                 category_mapping = {
                     1: 'subject_letter',
