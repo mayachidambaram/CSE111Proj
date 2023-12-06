@@ -225,6 +225,51 @@ def Q3_2(_conn, year, s_name, p_name):
     except Error as e:
         print(e)
 
+def Q4(_conn, first_name=None, last_name=None):
+    try:
+        print('\n')
+        output = open('output/Q4.out', 'w')
+        header = "{}|{}"
+        output.write((header.format("Title", "Author")) + '\n')
+
+        if first_name:
+            query = """SELECT F.f_title, F.f_author
+                       FROM Files F
+                       WHERE SUBSTR(F.f_author, 1, INSTR(F.f_author, ' ') - 1) LIKE ?;"""
+        elif last_name:
+            query = """SELECT F.f_title, F.f_author
+                       FROM Files F
+                       WHERE SUBSTR(F.f_author, INSTR(F.f_author, ' ') + 1) LIKE ?;"""
+        else:
+            print("Invalid option. Please provide either first name or last name.")
+            return
+
+        author_name = f"{first_name}%" if first_name else f"% {last_name}"
+
+        cursor = _conn.cursor()
+        cursor.execute(query, (author_name,))
+
+        results = cursor.fetchall()
+
+        temp = 0
+        if not results:
+            output.write("No books found for the specified author.\n")
+            temp = temp + 1
+        else:
+            for row in results:
+                output.write("|".join(map(str, row)) + '\n')
+        output.close()
+
+        with open('output/Q4.out', 'r') as output:
+            file_content = output.read()
+            print(file_content)
+        output.close()
+        return temp
+
+    except Error as e:
+        print(e)
+
+
 
 def display_files(cursor):
     query = """
@@ -277,108 +322,131 @@ def main():
         while True:
             # Allow the user to filter by category
             print('----------------------------------------------------------------------------------------------------------------------------------------------\n')
-            category = int(input("1. Subject\n"
+            try : 
+                category = int(input("1. Subject\n"
                                  "2. Publisher\n"
                                  "3. Publication date\n"
                                  "4. Author\n"
-                                 "5. File Keywords\n"
+                                 "5. Most Popular Subject"
                                  "0. Leave/Exit\n"
                                  "Choose the corresponding number to filter by a specific category: "))
                                  #"0. Apply Filters and Display Results\n"))
                                  #"Enter 0 to apply filters and display results: "))
-
-            if category == 0:
+                if category == 0:
                 # Apply all selected filters
                 #for filter_item in filters:
                 #    apply_filter(cursor, filter_item['category'], filter_item['value'])
-                break
-            if category == 1:
-                while True:
-                    letter = input("Enter the letter you want the subject to start with: ")
-                    with conn:
-                        result = Q1_1(conn, letter)
+                    break
+                if category == 1:
+                    while True:
+                        letter = input("Enter the letter you want the subject to start with: ")
+                        with conn:
+                            result = Q1_1(conn, letter)
                         if result: 
                             print("Please try again. ")
                         else :
                             break 
-                while True:
-                    s_name = input("Choose the subject you want and its book count will be returned: ")
-                    with conn:
-                        result = Q1_2(conn, s_name)
+                    while True:
+                        s_name = input("Choose the subject you want and its book count will be returned: ")
+                        with conn:
+                            result = Q1_2(conn, s_name)
                         if result:
                             print("Please try again.")
                         else :
                             break
-            if category == 2:
-                print("Here is list of all publishers you can choose from: \n")
-                with conn:
-                    Q2_1(conn)
-                while True:
-                    p_name = input("Choose a publisher. Ensure no typos or capitalization errors: ")
+                if category == 2:
+                    print("Here is list of all publishers you can choose from: \n")
                     with conn:
-                        result = Q2_2(conn,p_name)
+                        Q2_1(conn)
+                    while True:
+                        p_name = input("Choose a publisher. Ensure no typos or capitalization errors: ")
+                        with conn:
+                            result = Q2_2(conn,p_name)
                         if result:
                             print("There is an issue. Unfortunately, we by accident did not add files under this publiser. Please choose another.\n")
                         else :
                             break
-            if category == 3 :
-                print("You can find books after a cutoff date based on subject and/or publisher. \n")
-                if (s_name == "" and p_name == ""):
-                    print("You have neither chosen a subject name nor a publisher name \n")
-                    print("You will be assigned a random subject and random publisher \n")
-                    with conn:
-                        random_values = Q3_1(conn,1)
-                        if random_values:
-                            s_name, p_name = random_values[0]
-                elif (s_name == ""):
-                    print("You have not chosen a subject name \n")
-                    print("You will be assigned a random subject \n")
-                    with conn:
-                        random_values = Q3_1(conn,2)
-                        if random_values:
-                            s_name, p_name = random_values[0][0]
-                elif (p_name == ""):
-                    print("You have not chosen a publisher name \n")
-                    print("You will be assigned a random publisher \n")
-                    with conn:
-                        random_values = Q3_1(conn,3)
-                        if random_values:
-                            s_name, p_name = random_values[0][0]
-                print("\n")
-                while True:
-                    year = input("Regarding publication date, what is the earliest year a book you want can be from: ")
-                    with conn:
-                        result = Q3_2(conn,year,s_name,p_name)
-                        if result:
-                            print("Please try again with a different year or by accident we did not add this subject under this publisher. \n")
-                            print("To prevent continuouly finding a good cutoff date, we advise you to choose again from categories. \n")
+                if category == 3 :
+                    print("You can find books after a cutoff date based on subject and/or publisher. \n")
+                    print("If you would like to choose your subject and/or publisher without randomizing, go back to 1 or 2 category. \n")
+                    back = input("If you want to go back, type Y uppercase. If not, you can enter: ")
+                    while True:
+                        if (back == "Y"):
+                            s_name = ""
+                            p_name = ""
                             break
                         else:
+                            if (s_name == "" and p_name == ""):
+                                print("You have neither chosen a subject name nor a publisher name \n")
+                                print("You will be assigned a random subject and random publisher \n")
+                                with conn:
+                                    random_values = Q3_1(conn,1)
+                                if random_values:
+                                    s_name, p_name = random_values[0]
+                            elif (s_name == ""):
+                                print("You have not chosen a subject name \n")
+                                print("You will be assigned a random subject \n")
+                                with conn:
+                                    random_values = Q3_1(conn,2)
+                                if random_values:
+                                    s_name = random_values[0][0]
+                            elif (p_name == ""):
+                                print("You have not chosen a publisher name \n")
+                                print("You will be assigned a random publisher \n")
+                                with conn:
+                                    random_values = Q3_1(conn,3)
+                                    if random_values:
+                                        p_name = random_values[0][0]
+                            print("\n")
+                            while True:
+                                year = input("Regarding publication date, what is the earliest year a book you want can be from: ")
+                                with conn:
+                                    result = Q3_2(conn,year,s_name,p_name)
+                                if result:
+                                    print("Please try again with a different year or by accident we did not add this subject under this publisher. \n")
+                                    print("To prevent continuouly finding a good cutoff date, we advise you to choose again from categories. \n")
+                                    break
+                                else:
+                                    break
                             break
+                if category == 4:
+                    filter_option = input("Do you want to filter by (F)irst name or (L)ast name? ").upper()
 
-            #elif category in range(1, 7):
-            #    category_mapping = {
-            #        1: 'subject_letter',
-            #        2: 'publisher',
-            #        3: 'publisher_date',
-            #        4: 'author_first_name',
-            #        5: 'author_last_name',
-            #        6: 'never_borrowed'
-            #    }
-            #    category_name = category_mapping[category]
-            #    if category != 6:
-            #        value = input(f"Input which {category_name} you'd like to filter by: ")
-            #        filters.append({'category': category_name, 'value': value})
-            #    else:
-            #        # For 'never_borrowed', set an arbitrary value
-            #        filters.append({'category': category_name, 'value': 'dummy'})
+                    if filter_option == 'F':
+                        first_name = input("Type in the first name: ")
+                        with conn:
+                            result = Q4(conn, first_name=first_name)
+                    elif filter_option == 'L':
+                        last_name = input("Type in the last name: ")
+                        with conn:
+                            result = Q4(conn, last_name=last_name)
+                    else:
+                        print("Invalid option. Please enter 'F' for first name or 'L' for last name.")
 
-            #else:
-            #    print("Invalid category. Please choose a number between 0 and 6.")
+                if category == 5:
+                    print("We have a number of subjects")
+            except :
+                print("Invalid Input \n")
+            
 
     elif user_type == '1':
         # Handle teacher actions
-        pass
+         while True:
+            # Allow the user to filter by category
+            print('----------------------------------------------------------------------------------------------------------------------------------------------\n')
+            try : 
+                category = int(input("1. Insert a book"
+                                 "2. Update a book"
+                                 "3. Delete a book"
+                                 "1. Display books checked out by who/ when depending on subject\n"
+                                 "2. Display books \n" #smth about update/delete/insert
+                                 "5. Look up students w/ overdue books\n"
+                                 "0. Leave/Exit\n"
+                                 "Choose the corresponding number to filter by a specific category: "))
+                                 #"0. Apply Filters and Display Results\n"))
+                                 #"Enter 0 to apply filters and display results: "))
+            except : 
+                print("Invalid Input \n")
     else:
         print("Invalid input. Please enter 0 or 1.")
 
