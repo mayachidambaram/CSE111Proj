@@ -378,6 +378,55 @@ def Q6(_conn, title, author, date_str, subject, publisher):
     except Error as e:
         print(e)
 
+def Q7_sub(_conn, new_description, subject_name):
+    try:
+        query = """UPDATE Subjects SET s_description = ? WHERE s_subjectname = ?"""
+        cursor = _conn.cursor()
+        cursor.execute(query, (new_description, subject_name))
+        _conn.commit()
+    except Error as e:
+        print(e)
+
+def Q7_pub(_conn, new_licensing_agreement, publisher_name):
+    try:
+        query = """UPDATE Publisher SET p_licensingagreement = ? WHERE p_publishername = ?"""
+        cursor = _conn.cursor()
+        cursor.execute(query, (new_licensing_agreement, publisher_name))
+        _conn.commit()
+    except Error as e:
+        print(e)
+
+def Q7_file(_conn, new_title, new_author, new_publication_year, new_publisher, new_subject, original_title, original_author):
+    try:
+        queryQ7 = """ SELECT p_publisherkey FROM Publisher where p_publishername = ? """
+        cursor = _conn.cursor()
+        cursor.execute(queryQ7, (f'{new_publisher}%',))
+        new_publisherkey = cursor.fetchone()
+        new_publisherkey = new_publisherkey[0] if new_publisherkey else None
+
+        queryQ7S = """ SELECT s_subjectkey FROM Subjects where s_subjectname = ? """
+        cursor = _conn.cursor()
+        cursor.execute(queryQ7, (f'{new_subject}%',))
+        new_subjectkey = cursor.fetchone()
+        new_subjectkey = new_subjectkey[0] if new_subjectkey else None
+
+        query = """UPDATE Files 
+                   SET f_title = ?, 
+                       f_author = ?, 
+                       f_publicationYear = ?, 
+                       f_publisherkey = ?, 
+                       f_subjectkey = ? 
+                   WHERE f_title = ? AND f_author = ?"""
+        cursor = _conn.cursor()
+        cursor.execute(query, (
+            new_title, new_author, new_publication_year,
+            new_publisher_key, new_subject_key,
+            original_title, original_author
+        ))
+        _conn.commit()
+    except Error as e:
+        print(e)
+    
 def Q8(_conn, title, author):
     try:
 
@@ -689,6 +738,29 @@ def main():
                         name = input("Type name of publisher with a licensing agreement with the library: ")
                         with conn:
                             publish1Q6(conn, name)
+            if category == 2 :
+                print("Would you like to edit a subject or publisher or book?")
+                choice = input("Type S for subject, P for publisher, and F for file: ")
+                if choice == 'F':
+                    original_title = input("Type the current title of the book: ")
+                    original_author = input("Type the current name of the author: ")
+                    new_title = input("Type new title of the book: ")
+                    new_author = input("Type new author name: ")
+                    new_publication = input("Type new publication date: ")
+                    new_subject = input("Type new main subject: ")
+                    new_publisher = input("Type new publisher correctly: ")
+                    with conn:
+                        Q7_file(conn, new_title, new_author, new_publication_year, new_publisher, new_subject, original_title, original_author)
+                if choice == 'S':
+                    subject_name = input("Type name of the subject: ")
+                    new_description = input("Type a new description of the subject: ")
+                    with conn:
+                        Q7_sub(conn, new_description, subject_name)
+                if choice == 'P':
+                    publisher_name = input("Type name of publisher with a licensing agreement with the library: ")
+                    new_licensing_agreement = int(input("Type 0 or 1. 0 for no agreement and 1 for yes: "))
+                    with conn:
+                        Q7_pub(conn, new_licensing_agreement, publisher_name)
             if category == 3 :
                 print("Would you like to delete a  subject or a publisher or a book?")
                 choice = input("Type S for subject, P for publisher, and F for file: ")
