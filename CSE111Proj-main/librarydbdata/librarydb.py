@@ -269,6 +269,41 @@ def Q4(_conn, first_name=None, last_name=None):
     except Error as e:
         print(e)
 
+def Q5(_conn):
+    try:
+        output = open('output/Q5.out', 'w')
+        header = "{}"
+        output.write((header.format("Most Popular Subject")) + '\n')
+
+        query = """
+        SELECT s.s_subjectname AS Most_Popular_Subject
+        FROM Subjects s
+        JOIN (
+            SELECT s_subjectkey, COUNT(DISTINCT f_filekey) AS file_count
+            FROM ManySubjects
+            GROUP BY s_subjectkey
+            ORDER BY file_count DESC
+            LIMIT 1
+        ) AS maxFileCount ON s.s_subjectkey = maxFileCount.s_subjectkey;
+        """
+
+        cursor = _conn.cursor()
+        cursor.execute(query)
+
+        results = cursor.fetchall()
+
+        for row in results:
+            output.write("|".join(map(str, row)) + '\n')
+        output.close()
+
+        with open('output/Q5.out', 'r') as output:
+            file_content = output.read()
+            print(file_content)
+        output.close()
+
+    except Error as e:
+        print(e)
+
 
 
 def display_files(cursor):
@@ -424,7 +459,8 @@ def main():
                         print("Invalid option. Please enter 'F' for first name or 'L' for last name.")
 
                 if category == 5:
-                    print("We have a number of subjects")
+                    with conn:
+                        Q5(conn)
             except :
                 print("Invalid Input \n")
             
