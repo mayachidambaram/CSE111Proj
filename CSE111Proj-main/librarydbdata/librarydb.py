@@ -570,7 +570,7 @@ def main():
     conn = openConnection(database)
     #cursor = connection.cursor()
 
-    user_type = input("If you are a student, press 0. If you are a teacher, press 1: ")
+    user_type = input("If you are a student, press 0. If you are a librarian, press 1: ")
     print("\n")
 
     if user_type == '0':
