@@ -305,6 +305,35 @@ def Q5(_conn):
     except Error as e:
         print(e)
 
+def sub1Q6(_conn, title, description):
+    querysub1Q6_0 = """ SELECT max(s_subjectkey) FROM Subjects"""
+    cursor = _conn.cursor()
+    cursor.execute(querysub1Q6_0)
+    skey = cursor.fetchone()
+    skey = skey[0] if skey else None
+    new_skey = skey + 1
+    querySubject = """ INSERT INTO Subjects (s_subjectkey, s_description, s_subjectname)
+                    VALUES (?, ?, ?);"""
+    cursor = _conn.cursor()
+    cursor.execute(querySubject, (new_skey, f'{description}%', f'{title}%'))
+    _conn.commit()
+    cursor.close()
+
+def publish1Q6(_conn, name):
+    querypublish1Q6_0 = """ SELECT max(p_publisherkey) FROM Publisher"""
+    cursor = _conn.cursor()
+    cursor.execute(querypublish1Q6_0)
+    pkey = cursor.fetchone()
+    pkey = pkey[0] if pkey else None
+    new_pkey = pkey + 1
+    queryPublisher = """ INSERT INTO Publisher (p_publisherkey, p_publishername, p_licensingagreement)
+                    VALUES (?, ?, ?);"""
+    cursor = _conn.cursor()
+    cursor.execute(queryPublisher, (new_pkey, f'{name}%', 1))
+    _conn.commit()
+    cursor.close()
+
+
 def Q6(_conn, title, author, date_str, subject, publisher):
     try:
         query6_0 = """ SELECT max(f_filekey) FROM Files"""
@@ -373,6 +402,94 @@ def Q8(_conn, title, author):
         cursor.close()
 
         return 1
+    except Error as e:
+        print(e)
+
+def sub1Q8(_conn, the_subject):
+    try:
+
+        querysub1Q8_0 = """ SELECT s_subjectkey FROM Subjects where s_subjectname = ? """
+        cursor = _conn.cursor()
+        cursor.execute(querysub1Q8_0, (f'{the_subject}%',))
+        the_subjectkey = cursor.fetchone()
+        the_subjectkey = the_subjectkey[0] if the_subjectkey else None
+        if not the_subjectkey:
+            print("Subject intended to be deleted does not exist or is typed wrong. \n")
+            return 0
+    
+        querySD8_1 = """ delete from Subjects WHERE s_subjectkey = ?;"""
+        querySD8_2 = """update Subjects set s_subjectkey = s_subjectkey - 1
+                 where s_subjectkey > ?;"""
+
+        cursor = _conn.cursor()
+        cursor.execute(querySD8_1, (the_subjectkey, ))
+        cursor.execute(querySD8_2, (the_subjectkey, ))
+
+        _conn.commit()
+        cursor.close()
+
+        return 1
+    except Error as e:
+        print(e)
+
+def publish1Q8(_conn, the_publisher):
+    try:
+
+        querypublish1Q8_0 = """ SELECT p_publisherkey FROM Publisher where p_publishername = ? """
+        cursor = _conn.cursor()
+        cursor.execute(querypublish1Q8_0, (f'{the_publisher}%',))
+        the_publisherkey = cursor.fetchone()
+        the_publisherkey = the_publisherkey[0] if the_publisherkey else None
+        if not the_publisherkey:
+            print("Publisher intended to be deleted does not exist or is typed wrong. \n")
+            return 0
+    
+        queryPD8_1 = """ delete from Publisher WHERE p_publisherkey = ?;"""
+        queryPD8_2 = """update Publisher set p_publisherkey = p_publisherkey - 1
+                 where p_publisherkey > ?;"""
+
+        cursor = _conn.cursor()
+        cursor.execute(queryPD8_1, (the_publisherkey, ))
+        cursor.execute(queryPD8_2, (the_publisherkey, ))
+
+        _conn.commit()
+        cursor.close()
+
+        return 1
+    except Error as e:
+        print(e)
+
+def Q9(_conn, subject_name):
+    try:
+        output = open('output/9.out', 'w')
+        header = "{}|{}|{}|{}|{}"
+        output.write((header.format("Title", "Author", "Publication Year", "Borrow Date", "Username")) + '\n')
+
+        query = """
+        SELECT Files.f_title, Files.f_author, Files.f_publicationYear, BorrowedBooks.b_borrow_date, User.u_username
+        FROM Files
+        JOIN ManySubjects ON Files.f_filekey = ManySubjects.f_filekey
+        JOIN Subjects ON ManySubjects.s_subjectkey = Subjects.s_subjectkey
+        JOIN BorrowedBooks ON Files.f_filekey = BorrowedBooks.b_book_id
+        JOIN Student ON BorrowedBooks.b_student_id = Student.s_studentkey
+        JOIN User ON Student.s_studentkey = User.u_userkey
+        WHERE Subjects.s_subjectname = ?;
+        """
+
+        cursor = _conn.cursor()
+        cursor.execute(query, (subject_name,))
+
+        results = cursor.fetchall()
+
+        for row in results:
+            output.write("|".join(map(str, row)) + '\n')
+        output.close()
+
+        with open('output/9.out', 'r') as output:
+            file_content = output.read()
+            print(file_content)
+        output.close()
+
     except Error as e:
         print(e)
 
@@ -541,9 +658,9 @@ def main():
             # Allow the user to filter by category
             print('----------------------------------------------------------------------------------------------------------------------------------------------\n')
             #try : 
-            category = int(input("1. Insert a book\n"
+            category = int(input("1. Insert a book/subject/publisher\n"
                                  "2. Update a book\n"
-                                 "3. Delete a book\n"
+                                 "3. Delete a book/subject/publisher\n"
                                  "4. Display books checked out by who/ when depending on subject\n"
                                  "5. Look up students w/ overdue books\n"
                                  "0. Leave/Exit\n"
@@ -553,18 +670,49 @@ def main():
             if  category == 0 :
                     break
             if category == 1 :
-                    title = input("Type the title of the book: ")
-                    author = input("Type the full name of the author: ")
-                    date_str = input("Type the publication date: ")
-                    subject = input("Type the main subject: ")
-                    publisher = input("Type the publisher correctly: ")
-                    with conn:
-                        Q6(conn, title, author, date_str, subject, publisher)
+                    print("Would you like to create a new  subject or new publisher or new book with existing subjects/publishers?")
+                    choice = input("Type S for subject, P for publisher, and F for file: ")
+                    if choice == 'F':
+                        title = input("Type the title of the book: ")
+                        author = input("Type the full name of the author: ")
+                        date_str = input("Type the publication date: ")
+                        subject = input("Type the main subject: ")
+                        publisher = input("Type the publisher correctly: ")
+                        with conn:
+                            Q6(conn, title, author, date_str, subject, publisher)
+                    if choice == 'S':
+                        title = input("Type name of new subject: ")
+                        description = input("Type a brief description of the subject: ")
+                        with conn:
+                            sub1Q6(conn, title, description)
+                    if choice == 'P':
+                        name = input("Type name of publisher with a licensing agreement with the library: ")
+                        with conn:
+                            publish1Q6(conn, name)
             if category == 3 :
+                print("Would you like to delete a  subject or a publisher or a book?")
+                choice = input("Type S for subject, P for publisher, and F for file: ")
+                if choice == 'F':
                     title = input("Type the title of the book: ")
                     author = input("Type the full name of the author: ")
                     with conn:
                         Q8(conn, title, author)
+                if choice == 'S':
+                    the_subject = input("Type name of the subject: ")
+                    with conn:
+                        sub1Q8(conn, the_subject)
+                if choice == 'P':
+                    the_publisher = input("Type name of the publisher: ")
+                    with conn:
+                        publish1Q8(conn, the_publisher)
+
+            if category == 4:
+                while True:
+                    subject_name = input("Enter the subject name to display books checked out by who and when: ")
+                    with conn:
+                        Q9(conn, subject_name)
+                    break
+            
             
             #except: 
             #    print("Invalid Input Hello \n")
