@@ -307,6 +307,12 @@ def Q5(_conn):
 
 def Q6(_conn, title, author, date_str, subject, publisher):
     try:
+        query6_0 = """ SELECT max(f_filekey) FROM Files"""
+        cursor = _conn.cursor()
+        cursor.execute(query6_0)
+        fkey = cursor.fetchone()
+        fkey = fkey[0] if fkey else None
+        new_fkey = fkey + 1
         query6_1 = """ SELECT s_subjectkey FROM Subjects WHERE s_subjectname = ?  """
         cursor = _conn.cursor()
         cursor.execute(query6_1, (subject,))
@@ -327,27 +333,48 @@ def Q6(_conn, title, author, date_str, subject, publisher):
         skey = skey[0] if skey else None
         pkey = pkey[0] if pkey else None
 
-        output = open('output/6.out', 'w')
-        header = "{}|{}|{}|{}"
-        output.write((header.format("Title", "Year", "Subject", "Publisher")) + '\n')
-        query6 = """ INSERT INTO Files (f_title, f_author, f_publicationYear, f_publisherkey, f_subjectkey)
-                    VALUES (?, ? , ?, ?, ?);"""
+        query6 = """ INSERT INTO Files (f_filekey, f_title, f_author, f_publicationYear, f_publisherkey, f_subjectkey)
+                    VALUES (?, ?, ? , ?, ?, ?);"""
 
         date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
 
         cursor = _conn.cursor()
-        cursor.execute(query6, (f'{title}%', f'{author}%', date_obj, pkey, skey))
+        cursor.execute(query6, (new_fkey, f'{title}%', f'{author}%', date_obj, pkey, skey))
 
         _conn.commit()
         cursor.close()
 
-        output.close()
 
         return 1
     except Error as e:
         print(e)
 
+def Q8(_conn, title, author):
+    try:
 
+        query8_0 = """ SELECT f_filekey FROM Files where f_title = ? and f_author = ? """
+        cursor = _conn.cursor()
+        cursor.execute(query8_0, (f'{title}%', f'{author}%'))
+        the_filekey = cursor.fetchone()
+        the_filekey = the_filekey[0] if the_filekey else None
+        if not the_filekey:
+            print("File intended to be deleted does not exist or title/author is typed wrong. \n")
+            return 0
+    
+        query8_1 = """ delete from Files WHERE f_filekey = ?;"""
+        query8_2 = """update Files set f_filekey = f_filekey - 1
+                 where f_filekey > ?;"""
+
+        cursor = _conn.cursor()
+        cursor.execute(query8_1, (the_filekey, ))
+        cursor.execute(query8_2, (the_filekey, ))
+
+        _conn.commit()
+        cursor.close()
+
+        return 1
+    except Error as e:
+        print(e)
 
 def display_files(cursor):
     query = """
@@ -533,6 +560,12 @@ def main():
                     publisher = input("Type the publisher correctly: ")
                     with conn:
                         Q6(conn, title, author, date_str, subject, publisher)
+            if category == 3 :
+                    title = input("Type the title of the book: ")
+                    author = input("Type the full name of the author: ")
+                    with conn:
+                        Q8(conn, title, author)
+            
             #except: 
             #    print("Invalid Input Hello \n")
     else:
