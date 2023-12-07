@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 def openConnection(_dbFile):
     conn = None
@@ -19,7 +20,7 @@ def closeConnection(_conn, _dbFile):
     except Error as e:
         print(e)
 
-    
+
 def Q1_1(_conn, letter):
     try:
         print('\n')
@@ -304,6 +305,82 @@ def Q5(_conn):
     except Error as e:
         print(e)
 
+def Q6(_conn, title, author, date_str, subject, publisher):
+    try:
+        query6_1 = """ SELECT s_subjectkey FROM Subjects WHERE s_subjectname = ?  """
+        cursor = _conn.cursor()
+        cursor.execute(query6_1, (subject,))
+        skey = cursor.fetchone()
+        if not skey:
+            print("Subject either has not been created yet or there is a typo")
+            return 0
+
+        query6_2 = """ SELECT p_publisherkey FROM Publisher WHERE p_publishername = ?  """
+        cursor = _conn.cursor()
+        cursor.execute(query6_2, (publisher,))
+        pkey = cursor.fetchone()
+        if not pkey:
+            print("Publisher either has not been created yet or there is a typo. \n")
+            return 0
+
+        # Extracting values from the tuples
+        skey = skey[0] if skey else None
+        pkey = pkey[0] if pkey else None
+
+        output = open('output/6.out', 'w')
+        header = "{}|{}|{}|{}"
+        output.write((header.format("Title", "Year", "Subject", "Publisher")) + '\n')
+        query6 = """ INSERT INTO Files (f_title, f_author, f_publicationYear, f_publisherkey, f_subjectkey)
+                    VALUES (?, ? , ?, ?, ?);"""
+
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+
+        cursor = _conn.cursor()
+        cursor.execute(query6, (f'{title}%', f'{author}%', date_obj, pkey, skey))
+
+        _conn.commit()
+        cursor.close()
+
+        output.close()
+
+        return 1
+    except Error as e:
+        print(e)
+def Q9(_conn, subject_name):
+    try:
+        output = open('output/9.out', 'w')
+        header = "{}|{}|{}|{}|{}"
+        output.write((header.format("Title", "Author", "Publication Year", "Borrow Date", "Username")) + '\n')
+
+        query = """
+        SELECT Files.f_title, Files.f_author, Files.f_publicationYear, BorrowedBooks.b_borrow_date, User.u_username
+        FROM Files
+        JOIN ManySubjects ON Files.f_filekey = ManySubjects.f_filekey
+        JOIN Subjects ON ManySubjects.s_subjectkey = Subjects.s_subjectkey
+        JOIN BorrowedBooks ON Files.f_filekey = BorrowedBooks.b_book_id
+        JOIN Student ON BorrowedBooks.b_student_id = Student.s_studentkey
+        JOIN User ON Student.s_studentkey = User.u_userkey
+        WHERE Subjects.s_subjectname = ?;
+        """
+
+        cursor = _conn.cursor()
+        cursor.execute(query, (subject_name,))
+
+        results = cursor.fetchall()
+
+        for row in results:
+            output.write("|".join(map(str, row)) + '\n')
+        output.close()
+
+        with open('output/9.out', 'r') as output:
+            file_content = output.read()
+            print(file_content)
+        output.close()
+
+    except Error as e:
+        print(e)
+
+
 
 
 def display_files(cursor):
@@ -463,26 +540,44 @@ def main():
                         Q5(conn)
             except :
                 print("Invalid Input \n")
-            
+
 
     elif user_type == '1':
         # Handle teacher actions
          while True:
             # Allow the user to filter by category
             print('----------------------------------------------------------------------------------------------------------------------------------------------\n')
-            try : 
-                category = int(input("1. Insert a book"
-                                 "2. Update a book"
-                                 "3. Delete a book"
-                                 "1. Display books checked out by who/ when depending on subject\n"
-                                 "2. Display books \n" #smth about update/delete/insert
+            #try : 
+            category = int(input("1. Insert a book\n"
+                                 "2. Update a book\n"
+                                 "3. Delete a book\n"
+                                 "4. Display books checked out by who/ when depending on subject\n"
                                  "5. Look up students w/ overdue books\n"
                                  "0. Leave/Exit\n"
                                  "Choose the corresponding number to filter by a specific category: "))
                                  #"0. Apply Filters and Display Results\n"))
                                  #"Enter 0 to apply filters and display results: "))
-            except : 
-                print("Invalid Input \n")
+            if  category == 0 :
+                    break
+            if category == 1 :
+                    title = input("Type the title of the book: ")
+                    author = input("Type the full name of the author: ")
+                    date_str = input("Type the publication date: ")
+                    subject = input("Type the main subject: ")
+                    publisher = input("Type the publisher correctly: ")
+                    with conn:
+                        Q6(conn, title, author, date_str, subject, publisher)
+            if category == 4:
+                while True:
+                    subject_name = input("Enter the subject name to display books checked out by who and when: ")
+                    with conn:
+                        Q9(conn, subject_name)
+                    break
+            
+
+
+            #except: 
+            #    print("Invalid Input Hello \n")
     else:
         print("Invalid input. Please enter 0 or 1.")
 
