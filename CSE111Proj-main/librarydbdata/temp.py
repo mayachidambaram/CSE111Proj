@@ -20,7 +20,7 @@ def closeConnection(_conn, _dbFile):
     except Error as e:
         print(e)
 
-    
+
 def Q1_1(_conn, letter):
     try:
         print('\n')
@@ -306,34 +306,37 @@ def Q5(_conn):
         print(e)
 
 def Q6(_conn, title, author, date_str, subject, publisher):
-    #try:
-
+    try:
         query6_1 = """ SELECT s_subjectkey FROM Subjects WHERE s_subjectname = ?  """
         cursor = _conn.cursor()
-        cursor.execute(query6_1,(subject,))
+        cursor.execute(query6_1, (subject,))
         skey = cursor.fetchone()
-        cursor.close()
-        if not skey :
+        if not skey:
             print("Subject either has not been created yet or there is a typo")
             return 0
+
         query6_2 = """ SELECT p_publisherkey FROM Publisher WHERE p_publishername = ?  """
         cursor = _conn.cursor()
-        cursor.execute(query6_2,(publisher,))
+        cursor.execute(query6_2, (publisher,))
         pkey = cursor.fetchone()
-        cursor.close()
-        if not pkey :
+        if not pkey:
             print("Publisher either has not been created yet or there is a typo. \n")
             return 0
-        output = open('output/6.out','w')
+
+        # Extracting values from the tuples
+        skey = skey[0] if skey else None
+        pkey = pkey[0] if pkey else None
+
+        output = open('output/6.out', 'w')
         header = "{}|{}|{}|{}"
-        output.write((header.format("Title","Year","Subject","Publisher")) + '\n')
+        output.write((header.format("Title", "Year", "Subject", "Publisher")) + '\n')
         query6 = """ INSERT INTO Files (f_title, f_author, f_publicationYear, f_publisherkey, f_subjectkey)
                     VALUES (?, ? , ?, ?, ?);"""
-        
+
         date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
 
         cursor = _conn.cursor()
-        cursor.execute(query6,(f'{title}%',f'{author}%', date_obj, pkey, skey))
+        cursor.execute(query6, (f'{title}%', f'{author}%', date_obj, pkey, skey))
 
         _conn.commit()
         cursor.close()
@@ -341,8 +344,9 @@ def Q6(_conn, title, author, date_str, subject, publisher):
         output.close()
 
         return 1
-    #except Error as e:
-    #    print(e)
+    except Error as e:
+        print(e)
+
 
 
 def display_files(cursor):
@@ -502,7 +506,7 @@ def main():
                         Q5(conn)
             except :
                 print("Invalid Input \n")
-            
+
 
     elif user_type == '1':
         # Handle teacher actions
