@@ -305,17 +305,17 @@ def Q5(_conn):
     except Error as e:
         print(e)
 
-def sub1Q6(_conn, title, description):
+def sub1Q6(_conn, title):
     querysub1Q6_0 = """ SELECT max(s_subjectkey) FROM Subjects"""
     cursor = _conn.cursor()
     cursor.execute(querysub1Q6_0)
     skey = cursor.fetchone()
     skey = skey[0] if skey else None
     new_skey = skey + 1
-    querySubject = """ INSERT INTO Subjects (s_subjectkey, s_description, s_subjectname)
-                    VALUES (?, ?, ?);"""
+    querySubject = """ INSERT INTO Subjects (s_subjectkey, s_subjectname)
+                    VALUES (?, ?);"""
     cursor = _conn.cursor()
-    cursor.execute(querySubject, (new_skey, description, title))
+    cursor.execute(querySubject, (new_skey, title))
     _conn.commit()
     cursor.close()
 
@@ -770,9 +770,8 @@ def main():
                             Q6(conn, title, author, date_str, subject, publisher)
                     if choice == 'S':
                         title = input("Type name of new subject: ")
-                        description = input("Type a brief description of the subject: ")
                         with conn:
-                            sub1Q6(conn, title, description)
+                            sub1Q6(conn, title)
                     if choice == 'P':
                         name = input("Type name of publisher with a licensing agreement with the library: ")
                         with conn:
