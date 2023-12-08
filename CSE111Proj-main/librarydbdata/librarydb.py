@@ -202,7 +202,7 @@ def Q3_2(_conn, year, s_name, p_name):
                        JOIN ManySubjects M on F.f_filekey = M.f_filekey  
                        JOIN Subjects S on S.s_subjectkey = M.s_subjectkey
                        JOIN Publisher P on F.f_publisherkey = P.p_publisherkey
-                       where strftime('%Y',F.f_publicationYear) <= ? 
+                       where strftime('%Y',F.f_publicationYear) >= ? 
                        and S.s_subjectname = ? and P.p_publishername = ?"""
 
         cursor = _conn.cursor()
@@ -315,7 +315,7 @@ def sub1Q6(_conn, title, description):
     querySubject = """ INSERT INTO Subjects (s_subjectkey, s_description, s_subjectname)
                     VALUES (?, ?, ?);"""
     cursor = _conn.cursor()
-    cursor.execute(querySubject, (new_skey, f'{description}%', f'{title}%'))
+    cursor.execute(querySubject, (new_skey, description, title))
     _conn.commit()
     cursor.close()
 
@@ -329,7 +329,7 @@ def publish1Q6(_conn, name):
     queryPublisher = """ INSERT INTO Publisher (p_publisherkey, p_publishername, p_licensingagreement)
                     VALUES (?, ?, ?);"""
     cursor = _conn.cursor()
-    cursor.execute(queryPublisher, (new_pkey, f'{name}%', 1))
+    cursor.execute(queryPublisher, (new_pkey, name, 1))
     _conn.commit()
     cursor.close()
 
@@ -367,7 +367,7 @@ def Q6(_conn, title, author, date_str, subject, publisher):
         date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
 
         cursor = _conn.cursor()
-        cursor.execute(query6, (new_fkey, f'{title}%', f'{author}%', date_obj, pkey, skey))
+        cursor.execute(query6, (new_fkey, title, author, date_obj, pkey, skey))
 
         _conn.commit()
         cursor.close()
@@ -381,7 +381,7 @@ def sub1Q8(_conn, the_subject):
 
         querysub1Q8_0 = """ SELECT s_subjectkey FROM Subjects where s_subjectname = ? """
         cursor = _conn.cursor()
-        cursor.execute(querysub1Q8_0, (f'{the_subject}%',))
+        cursor.execute(querysub1Q8_0, (the_subject,))
         the_subjectkey = cursor.fetchone()
         the_subjectkey = the_subjectkey[0] if the_subjectkey else None
         if not the_subjectkey:
@@ -408,7 +408,7 @@ def publish1Q8(_conn, the_publisher):
 
         querypublish1Q8_0 = """ SELECT p_publisherkey FROM Publisher where p_publishername = ? """
         cursor = _conn.cursor()
-        cursor.execute(querypublish1Q8_0, (f'{the_publisher}%',))
+        cursor.execute(querypublish1Q8_0, (the_publisher,))
         the_publisherkey = cursor.fetchone()
         the_publisherkey = the_publisherkey[0] if the_publisherkey else None
         if not the_publisherkey:
@@ -430,12 +430,61 @@ def publish1Q8(_conn, the_publisher):
     except Error as e:
         print(e)
 
+def Q7_sub(_conn, new_name, subject_name):
+    try:
+        query = """UPDATE Subjects SET s_subjectname = ? WHERE s_subjectname = ?"""
+        cursor = _conn.cursor()
+        cursor.execute(query, (new_name, subject_name))
+        _conn.commit()
+    except Error as e:
+        print(e)
+
+def Q7_pub(_conn, new_licensing_agreement, publisher_name):
+    try:
+        query = """UPDATE Publisher SET p_licensingagreement = ? WHERE p_publishername = ?"""
+        cursor = _conn.cursor()
+        cursor.execute(query, (new_licensing_agreement, publisher_name))
+        _conn.commit()
+    except Error as e:
+        print(e)
+
+def Q7_file(_conn, new_title, new_author, new_publication_year, new_publisher, new_subject, original_title, original_author):
+    try:
+        queryQ7 = """ SELECT p_publisherkey FROM Publisher where p_publishername = ? """
+        cursor = _conn.cursor()
+        cursor.execute(queryQ7, (new_publisher,))
+        new_publisherkey = cursor.fetchone()
+        new_publisherkey = new_publisherkey[0] if new_publisherkey else None
+
+        queryQ7S = """ SELECT s_subjectkey FROM Subjects where s_subjectname = ? """
+        cursor = _conn.cursor()
+        cursor.execute(queryQ7, (new_subject,))
+        new_subjectkey = cursor.fetchone()
+        new_subjectkey = new_subjectkey[0] if new_subjectkey else None
+
+        query = """UPDATE Files 
+                   SET f_title = ?, 
+                       f_author = ?, 
+                       f_publicationYear = ?, 
+                       f_publisherkey = ?, 
+                       f_subjectkey = ? 
+                   WHERE f_title = ? AND f_author = ?"""
+        cursor = _conn.cursor()
+        cursor.execute(query, (
+            new_title, new_author, new_publication_year,
+            new_publisherkey, new_subjectkey,
+            original_title, original_author
+        ))
+        _conn.commit()
+    except Error as e:
+        print(e)
+
 def Q8(_conn, title, author):
     try:
 
         query8_0 = """ SELECT f_filekey FROM Files where f_title = ? and f_author = ? """
         cursor = _conn.cursor()
-        cursor.execute(query8_0, (f'{title}%', f'{author}%'))
+        cursor.execute(query8_0, (title, author))
         the_filekey = cursor.fetchone()
         the_filekey = the_filekey[0] if the_filekey else None
         if not the_filekey:
@@ -588,7 +637,7 @@ def main():
                                  "2. Publisher\n"
                                  "3. Publication date\n"
                                  "4. Author\n"
-                                 "5. Most Popular Subject"
+                                 "5. Most Popular Subject\n"
                                  "0. Leave/Exit\n"
                                  "Choose the corresponding number to filter by a specific category: "))
                                  #"0. Apply Filters and Display Results\n"))
@@ -671,18 +720,18 @@ def main():
                                     break
                             break
                 if category == 4:
-                    filter_option = input("Do you want to filter by (F)irst name or (L)ast name? ").upper()
+                    filter_option = input("Please filter by (F)irst name.").upper()
 
                     if filter_option == 'F':
                         first_name = input("Type in the first name: ")
                         with conn:
                             result = Q4(conn, first_name=first_name)
-                    elif filter_option == 'L':
-                        last_name = input("Type in the last name: ")
-                        with conn:
-                            result = Q4(conn, last_name=last_name)
+                    #elif filter_option == 'L':
+                    #    last_name = input("Type in the last name: ")
+                    #    with conn:
+                    #        result = Q4(conn, last_name=last_name)
                     else:
-                        print("Invalid option. Please enter 'F' for first name or 'L' for last name.")
+                        print("Not a valid input")
 
                 if category == 5:
                     with conn:
@@ -698,7 +747,7 @@ def main():
             print('----------------------------------------------------------------------------------------------------------------------------------------------\n')
             #try : 
             category = int(input("1. Insert a book/subject/publisher\n"
-                                 "2. Update a book\n"
+                                 "2. Update a book/subject/publisher\n"
                                  "3. Delete a book/subject/publisher\n"
                                  "4. Display books checked out by who/ when depending on subject\n"
                                  "5. Look up students w/ overdue books\n"
@@ -728,6 +777,29 @@ def main():
                         name = input("Type name of publisher with a licensing agreement with the library: ")
                         with conn:
                             publish1Q6(conn, name)
+            if category == 2 :
+                print("Would you like to edit a subject or publisher or book?")
+                choice = input("Type S for subject, P for publisher, and F for file: ")
+                if choice == 'F':
+                    original_title = input("Type the current title of the book: ")
+                    original_author = input("Type the current name of the author: ")
+                    new_title = input("Type new title of the book: ")
+                    new_author = input("Type new author name: ")
+                    new_publication_year = input("Type new publication date: ")
+                    new_subject = input("Type new main subject: ")
+                    new_publisher = input("Type new publisher correctly: ")
+                    with conn:
+                        Q7_file(conn, new_title, new_author, new_publication_year, new_publisher, new_subject, original_title, original_author)
+                if choice == 'S':
+                    subject_name = input("Type name of the subject: ")
+                    new_name = input("Type a changed name of the subject: ")
+                    with conn:
+                        Q7_sub(conn, new_name, subject_name)
+                if choice == 'P':
+                    publisher_name = input("Type name of publisher with a licensing agreement with the library: ")
+                    new_licensing_agreement = int(input("Type 0 or 1. 0 for no agreement and 1 for yes: "))
+                    with conn:
+                        Q7_pub(conn, new_licensing_agreement, publisher_name)
             if category == 3 :
                 print("Would you like to delete a  subject or a publisher or a book?")
                 choice = input("Type S for subject, P for publisher, and F for file: ")
