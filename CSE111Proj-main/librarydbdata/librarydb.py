@@ -91,9 +91,9 @@ def Q1_2(_conn, s_name):
 def Q2_1(_conn):
     try: 
         output = open('output/2_1.out', 'w')
-        header = "{}"
-        output.write((header.format("Publisher/s :")) + '\n')
-        query2_1 = """SELECT p_publishername as publisher
+        header = "{}|{}"
+        output.write((header.format("Publisher/s :", '')) + '\n')
+        query2_1 = """SELECT p_publishername, p_licensingagreement as publisher
                       FROM Publisher
                       Group By p_publishername"""
 
